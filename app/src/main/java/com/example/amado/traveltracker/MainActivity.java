@@ -1,5 +1,8 @@
 package com.example.amado.traveltracker;
 
+import android.app.AlertDialog;
+import android.app.FragmentManager;
+import android.content.DialogInterface;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -16,19 +19,68 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
 
-public class MainActivity extends ActionBarActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, GoogleMap.OnMapClickListener{
+public class
+        MainActivity extends ActionBarActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, GoogleMap.OnMapClickListener, MemoryDialogFragment.Listener{
 
     private GoogleMap mMap;
     private final static String TAG = "MainActivity";
+    private final static String MEMORY_TAG = "MemoryDialog";
     private GoogleApiClient mGoogleApiClient;
+    private HashMap<String, Memory> mMemories = new HashMap<>();
+
+
+    @Override
+    public void onMapClick(LatLng latLng) {
+        Geocoder geocoder = new Geocoder(this);
+        List<Address> matches = null;
+
+        try {
+
+            matches= geocoder.getFromLocation(latLng.latitude, latLng.longitude,1);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.d(TAG, "catch");
+        }
+
+
+        if(matches == null){
+            Log.d(TAG, "is null");
+        }
+        Address bestMatch = (matches.isEmpty()) ? null : matches.get(0);
+
+        int maxLine = bestMatch.getMaxAddressLineIndex();
+
+        Memory memory = new Memory();
+        memory.city = bestMatch.getAddressLine(maxLine - 1);
+        memory.country = bestMatch.getAddressLine(maxLine);
+        memory.latitude = latLng.latitude;
+        memory.longitude= latLng.longitude;
+
+
+        MemoryDialogFragment.newInstance(memory).show(getFragmentManager(), MEMORY_TAG);
+
+
+
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+        mMap.setMyLocationEnabled(true);
+        mMap.setOnMapClickListener(this);
+        mMap.setInfoWindowAdapter(new MarkerAdapter(getLayoutInflater(), mMemories));
+    }
 
 
     @Override
@@ -67,12 +119,7 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
         return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-        mMap.setMyLocationEnabled(true);
-        mMap.setOnMapClickListener(this);
-    }
+
 
     @Override
     public void onConnected(Bundle bundle) {
@@ -106,28 +153,15 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
     }
 
     @Override
-    public void onMapClick(LatLng latLng) {
-        Geocoder geocoder = new Geocoder(this);
-        List<Address> matches = null;
+    public void OnSaveClicked(Memory memory) {
+        Marker marker =mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(memory.latitude, memory.longitude)));
 
+        mMemories.put(marker.getId(), memory);
+    }
 
-        try {
-            matches= geocoder.getFromLocation(latLng.latitude, latLng.longitude,1);
-        }catch(IOException e){
-            e.printStackTrace();
-        }
-
-        if(matches == null){
-            Log.d(TAG, "is null");
-        }
-        //Address bestMatch = (matches.isEmpty()) ? null : matches.get(0);
-
-        //int maxLine = bestMatch.getMaxAddressLineIndex();
-
-        mMap.addMarker(new MarkerOptions()
-        .position(latLng)
-        .title("title")
-        .snippet("snip"));
+    @Override
+    public void OnCancelClicked(Memory memory) {
 
     }
 }
