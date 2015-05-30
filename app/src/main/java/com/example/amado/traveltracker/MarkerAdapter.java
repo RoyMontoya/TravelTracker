@@ -1,7 +1,9 @@
 package com.example.amado.traveltracker;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -13,6 +15,7 @@ import java.util.HashMap;
  * Created by Amado on 30/04/2015.
  */
 public class MarkerAdapter implements GoogleMap.InfoWindowAdapter {
+    private static final String TAG = "MarkerAdapter";
 
     private LayoutInflater mLayoutInflater;
     private View mView;
@@ -43,6 +46,7 @@ public class MarkerAdapter implements GoogleMap.InfoWindowAdapter {
         snippet.setText(memory.country);
         TextView notes = (TextView)mView.findViewById(R.id.notes);
         notes.setText(memory.notes);
+
 
 
         return mView;
